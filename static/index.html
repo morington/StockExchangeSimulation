@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Price Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        .chart-container {
+            width: 23%;  /* Ширина каждого графика */
+            display: inline-block;
+            margin: 1%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            height: 500px;  /* Увеличиваем высоту для таблицы */
+            position: relative;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .charts-row {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: nowrap;
+        }
+        .price-display {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
+            color: #333;
+        }
+        .balance-display {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 10px;
+            color: #555;
+        }
+        .trade-controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .trade-controls input {
+            width: 60px;
+            padding: 5px;
+            margin-right: 10px;
+        }
+        .trade-controls button {
+            padding: 5px 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        canvas {
+            max-height: 200px;
+        }
+        .history-table {
+            margin-top: 20px;
+            max-height: 150px;  /* Ограничиваем высоту таблицы */
+            overflow-y: auto;  /* Добавляем скроллинг */
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .history-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .history-table th,
+        .history-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .history-table th {
+            background-color: #f1f1f1;
+        }
+        .history-table td {
+            color: #333;
+        }
+        .green {
+            color: green;
+        }
+        .red {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Crypto Price Simulator</h1>
+    <div class="balance-display">Main Balance: $<span id="mainBalance">1000.00</span></div>
+    <div class="charts-row">
+        <div class="chart-container">
+            <canvas id="btcChart"></canvas>
+            <div class="price-display" id="btcPrice">$0.00</div>
+            <div class="balance-display">BTC Balance: <span id="btcBalance">0.00</span></div>
+            <div class="trade-controls">
+                <input type="number" id="btcAmount" value="1.00" min="0.00" step="1.00">
+                <button onclick="trade('btc', 'buy')">Buy</button>
+                <button onclick="trade('btc', 'sell')">Sell</button>
+            </div>
+            <div class="error-message" id="btcError"></div>
+            <div class="history-table">
+                <table id="btcHistory">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th>Price</th>
+                            <th>Amount</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- История будет добавляться сюда -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="ethChart"></canvas>
+            <div class="price-display" id="ethPrice">$0.00</div>
+            <div class="balance-display">ETH Balance: <span id="ethBalance">0.00</span></div>
+            <div class="trade-controls">
+                <input type="number" id="ethAmount" value="1.00" min="0.00" step="1.00">
+                <button onclick="trade('eth', 'buy')">Buy</button>
+                <button onclick="trade('eth', 'sell')">Sell</button>
+            </div>
+            <div class="error-message" id="ethError"></div>
+            <div class="history-table">
+                <table id="ethHistory">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th>Price</th>
+                            <th>Amount</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- История будет добавляться сюда -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="xrpChart"></canvas>
+            <div class="price-display" id="xrpPrice">$0.00</div>
+            <div class="balance-display">XRP Balance: <span id="xrpBalance">0.00</span></div>
+            <div class="trade-controls">
+                <input type="number" id="xrpAmount" value="1.00" min="0.00" step="1.00">
+                <button onclick="trade('xrp', 'buy')">Buy</button>
+                <button onclick="trade('xrp', 'sell')">Sell</button>
+            </div>
+            <div class="error-message" id="xrpError"></div>
+            <div class="history-table">
+                <table id="xrpHistory">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th>Price</th>
+                            <th>Amount</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- История будет добавляться сюда -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="ltcChart"></canvas>
+            <div class="price-display" id="ltcPrice">$0.00</div>
+            <div class="balance-display">LTC Balance: <span id="ltcBalance">0.00</span></div>
+            <div class="trade-controls">
+                <input type="number" id="ltcAmount" value="1.00" min="0.00" step="1.00">
+                <button onclick="trade('ltc', 'buy')">Buy</button>
+                <button onclick="trade('ltc', 'sell')">Sell</button>
+            </div>
+            <div class="error-message" id="ltcError"></div>
+            <div class="history-table">
+                <table id="ltcHistory">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th>Price</th>
+                            <th>Amount</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- История будет добавляться сюда -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cryptoIds = ["btc", "eth", "xrp", "ltc"];
+        const charts = {};
+
+        // Цвета для каждой монеты
+        const colors = {
+            btc: "#1f77b4",  // Синий
+            eth: "#2ca02c",  // Зелёный
+            xrp: "#ff7f7f",  // Бледно-красный
+            ltc: "#ff7f0e",  // Оранжевый
+        };
+
+        // Инициализация графиков
+        cryptoIds.forEach((id) => {
+            const ctx = document.getElementById(`${id}Chart`).getContext('2d');
+            charts[id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 60 }, (_, i) => i),  // Ось X: 0-59 секунд
+                    datasets: [{
+                        label: `Crypto Price (${id.toUpperCase()})`,
+                        borderColor: colors[id],  // Используем фиксированный цвет
+                        data: Array(60).fill(null),  // Начальные данные (60 точек)
+                        fill: false,
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            min: 0,
+                            max: 59,
+                            ticks: {
+                                stepSize: 10,  // Шаг оси X
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,  // Начинать ось Y не с нуля
+                        }
+                    },
+                    animation: false,  // Отключаем анимацию для плавного обновления
+                    responsive: true,
+                    maintainAspectRatio: false,
+                }
+            });
+        });
+
+        // WebSocket для каждого графика
+        cryptoIds.forEach((id) => {
+            const ws = new WebSocket(`ws://localhost:8000/ws/${id}`);
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const chart = charts[data.crypto_id];
+
+                // Добавляем новую точку и удаляем старую
+                chart.data.datasets[0].data.push(data.price);  // Добавляем новую цену
+                chart.data.datasets[0].data.shift();  // Удаляем первую цену
+
+                // Обновляем график
+                chart.update();
+
+                // Обновляем отображение текущей цены
+                const priceElement = document.getElementById(`${id}Price`);
+                priceElement.textContent = `$${data.price.toFixed(2)}`;
+
+                // Обновляем баланс монеты
+                const balanceElement = document.getElementById(`${id}Balance`);
+                balanceElement.textContent = data.balance.toFixed(2);
+
+                // Обновляем основной баланс
+                const mainBalanceElement = document.getElementById("mainBalance");
+                mainBalanceElement.textContent = data.main_balance.toFixed(2);
+            };
+        });
+
+        // Функция для покупки/продажи
+        async function trade(crypto_id, action) {
+            const amount = parseFloat(document.getElementById(`${crypto_id}Amount`).value);
+            if (isNaN(amount) || amount <= 0) {
+                showError(crypto_id, "Invalid amount");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/trade/${crypto_id}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ action, amount }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    showError(crypto_id, errorData.detail || "Unknown error");
+                    return;
+                }
+
+                const result = await response.json();
+                showError(crypto_id, "");  // Очищаем сообщение об ошибке
+
+                // Добавляем запись в историю
+                addHistory(crypto_id, action, result.price, amount, result.main_balance);
+            } catch (error) {
+                showError(crypto_id, "Network error");
+            }
+        }
+
+        // Показать сообщение об ошибке
+        function showError(crypto_id, message) {
+            const errorElement = document.getElementById(`${crypto_id}Error`);
+            errorElement.textContent = message;
+        }
+
+        // Добавить запись в историю
+        function addHistory(crypto_id, action, price, amount, new_balance) {
+            const historyTable = document.getElementById(`${crypto_id}History`).getElementsByTagName('tbody')[0];
+            const row = historyTable.insertRow(0);
+
+            // Монета
+            const coinCell = row.insertCell(0);
+            coinCell.textContent = crypto_id.toUpperCase();
+
+            // Цена
+            const priceCell = row.insertCell(1);
+            priceCell.textContent = price.toFixed(2);
+
+            // Количество
+            const amountCell = row.insertCell(2);
+            amountCell.textContent = amount.toFixed(2);
+
+            // Баланс
+            const balanceCell = row.insertCell(3);
+            const oldBalance = parseFloat(document.getElementById("mainBalance").textContent);
+
+            if (action === 'buy') {
+                // Покупка: старый баланс красный, новый баланс зелёный
+                balanceCell.innerHTML = `
+                    <span class="green">${oldBalance.toFixed(2)}</span>
+                    ->
+                    <span class="red">${new_balance.toFixed(2)}</span>
+                `;
+            } else if (action === 'sell') {
+                // Продажа: старый баланс зелёный, новый баланс красный
+                balanceCell.innerHTML = `
+                    <span class="red">${oldBalance.toFixed(2)}</span>
+                    ->
+                    <span class="green">${new_balance.toFixed(2)}</span>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
